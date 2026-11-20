@@ -1,0 +1,28 @@
+import { useEffect, useRef, useState } from 'react';
+import LeafletMap from './LeafletMap';
+import { DEFAULT_MAP_CENTER, GEOCODER_PROVIDER, GEOCODER_URL, normalizePoint } from './mapConfig';
+import { haversineMeters } from './geoUtils';
+
+const roundPoint = (point) => ({ lat:Number(Number(point.lat).toFixed(6)), lng:Number(Number(point.lng).toFixed(6)) });
+export default function StopPickerMap({ value, onChange, existingStops=[], onSuggestName, height=300 }) {
+  const [query,setQuery]=useState(''); const [results,setResults]=useState([]); const [searching,setSearching]=useState(false); const [error,setError]=useState(''); const timer=useRef(null); const lastRequest=useRef(0); const requestController=useRef(null);
+  const point=normalizePoint(value); const center=point ?? existingStops.map(s=>normalizePoint({lat:s.latitude,lng:s.longitude})).filter(Boolean)[0] ?? DEFAULT_MAP_CENTER;
+  const nearby=point ? existingStops.find(s=>{const p=normalizePoint({lat:s.latitude ?? s.lat,lng:s.longitude ?? s.lng});return p && haversineMeters(point,p)<=50;}) : null;
+  useEffect(()=>()=>{clearTimeout(timer.current);requestController.current?.abort();},[]);
+  const search=()=>{ clearTimeout(timer.current); if(!query.trim())return; timer.current=setTimeout(async()=>{setSearching(true);setError('');requestController.current?.abort();requestController.current=new AbortController();try{ if(GEOCODER_PROVIDER.toLowerCase()==='nominatim'){const wait=Math.max(0,1100-(Date.now()-lastRequest.current)); if(wait) await new Promise(r=>setTimeout(r,wait));} lastRequest.current=Date.now(); const url=new URL(GEOCODER_URL);url.searchParams.set('q',query.trim());url.searchParams.set('format','jsonv2');url.searchParams.set('limit','5');url.searchParams.set('accept-language','en');const response=await fetch(url,{headers:{'Accept-Language':'en'},signal:requestController.current.signal});if(!response.ok)throw new Error('Place search is unavailable.');const body=await response.json();setResults(body.map(item=>({label:item.display_name,point:{lat:Number(item.lat),lng:Number(item.lon)}})));if(!body.length)setError('No places found. Try a nearby landmark.');}catch(e){if(e.name!=='AbortError')setError(e.message||'Place search failed.');}finally{setSearching(false);}},500);};
+  const suggestPointName=async(p)=>{ if(!onSuggestName || query.trim() || GEOCODER_PROVIDER.toLowerCase()!=='nominatim') return; try { const url=new URL(GEOCODER_URL);url.pathname=url.pathname.replace(/\/search\/?$/,'/reverse');url.searchParams.set('format','jsonv2');url.searchParams.set('lat',String(p.lat));url.searchParams.set('lon',String(p.lng));url.searchParams.set('zoom','18');url.searchParams.set('accept-language','en');requestController.current?.abort();requestController.current=new AbortController();const response=await fetch(url,{headers:{'Accept-Language':'en'},signal:requestController.current.signal});if(response.ok){const body=await response.json();const name=body?.name ?? body?.address?.amenity ?? body?.address?.road ?? body?.address?.suburb ?? body?.address?.neighbourhood;if(name)onSuggestName(name);}}catch{/* reverse-geocoding is a suggestion only */} };
+  const pickPoint=(p)=>{const rounded=roundPoint(p);onChange(rounded);suggestPointName(rounded);};
+  const useCurrent=()=>{setError('');if(!window.isSecureContext){setError('Location requires HTTPS (localhost is supported).');return;}if(!navigator.geolocation){setError('This device does not support location.');return;}navigator.geolocation.getCurrentPosition(pos=>pickPoint({lat:pos.coords.latitude,lng:pos.coords.longitude}),e=>setError(e.code===1?'Location permission needed. Allow location access in browser settings.':'Could not get your current location. Try searching or tap the map.'),{enableHighAccuracy:true,timeout:10000,maximumAge:2000});};
+  const choose=(result)=>{pickPoint(result.point);setResults([]);setQuery(result.label); if(onSuggestName && result.label) onSuggestName(result.label.split(',')[0]);};
+  return <section className="bt-stop-picker"><div className="bt-map-search"><input value={query} onChange={e=>{setQuery(e.target.value);if(e.target.value.trim())search();}} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();search();}}} placeholder="Search place or landmark" aria-label="Search place"/><button className="bt-map-control" type="button" onClick={search} disabled={searching}>{searching?'Searching…':'Search'}</button></div>
+    {results.length>0&&<div className="bt-map-results">{results.map((r,i)=><button type="button" key={`${r.label}-${i}`} onClick={()=>choose(r)}>{r.label}</button>)}</div>}
+    {!navigator.onLine&&<p role="status" className="bt-map-status">Offline: the map may remain visible, but place search and saving require a connection.</p>}{error&&<p role="alert" className="bt-map-status">{error}</p>}
+    <p className="bt-map-status">If your browser blocks location access, allow it in site settings. Device location requires HTTPS (localhost is supported).</p>
+    <p className="bt-map-status">Tap the map to place the stop pin, or drag the pin to fine-tune it.</p>
+    <LeafletMap height={height} center={center} zoom={point?16:13} selectedPoint={point} onPointChange={pickPoint} onMapClick={pickPoint} existingStops={existingStops}/>
+    <button className="bt-map-control" type="button" onClick={useCurrent} style={{marginTop:8}}>Use my current location</button>
+    {point&&<p className="bt-map-status">Selected: {point.lat.toFixed(6)}, {point.lng.toFixed(6)}</p>}
+    {nearby&&<p role="status" className="bt-map-status" style={{borderColor:'#F59E0B'}}>A stop named '{nearby.name ?? nearby.stopName ?? 'Unnamed stop'}' already exists nearby.</p>}
+    <small>Search results and map data © OpenStreetMap contributors.</small>
+  </section>;
+}

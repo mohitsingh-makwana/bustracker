@@ -1,0 +1,56 @@
+.bt-map { width:100%; min-height:220px; overflow:hidden; border-radius:16px; background:#eef2f4; position:relative; z-index:0; }
+.bt-map .leaflet-container { width:100%; height:100%; min-height:inherit; font:inherit; background:#eef2f4; }
+.bt-bus-marker { width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#F59E0B;border:3px solid white;box-shadow:0 3px 12px #0f172a45;color:#0F172A;position:relative; }
+.bt-bus-marker svg { width:22px;height:22px; }
+.bt-bus-wedge { position:absolute;left:50%;top:-7px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:12px solid #0F172A;transform-origin:50% 27px; }
+.bt-bus-marker.is-stale { opacity:.48;filter:grayscale(.55); }
+.bt-stop-marker { display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid #0F172A;color:#0F172A;font-weight:800;font-size:12px;box-shadow:0 2px 6px #0f172a35; }
+.bt-stop-marker.is-passed { background:#94a3b8;color:#fff;border-color:#64748b; }
+.bt-stop-marker.is-next { width:36px;height:36px;background:#F59E0B;border:3px solid #fff;font-size:14px; }
+.bt-stop-marker.is-destination { border-radius:6px 6px 6px 0;background:#F59E0B; }
+.bt-map-control { background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:9px 12px;color:#0F172A;box-shadow:0 2px 8px #0f172a18;font-weight:700; }
+.bt-map-status { padding:9px 12px;border-radius:12px;background:#fff9;border:1px solid #e2e8f0;color:#334155;font-size:13px;margin-bottom:8px; }
+.bt-map-search { display:flex;gap:8px;margin-bottom:10px; }
+.bt-map-search input { flex:1;min-width:0;border:1px solid #e2e8f0;border-radius:12px;padding:11px;background:white;color:#0f172a; }
+.bt-map-results { display:grid;gap:5px;max-height:150px;overflow:auto;margin-bottom:8px; }
+.bt-map-results button { text-align:left;padding:10px;border:1px solid #e2e8f0;background:#fff;border-radius:10px;color:#0f172a; }
+
+
+/* Leaflet's own layout rules are required for its tile grid and pointer events.
+   Some app-wide styles constrain img elements and break the tile grid unless
+   Leaflet's images are explicitly allowed to retain their intrinsic 256px size. */
+.bt-map .leaflet-container { position: relative; overflow: hidden; outline: 0; }
+.bt-map .leaflet-container img,
+.bt-map .leaflet-tile,
+.bt-map .leaflet-marker-icon,
+.bt-map .leaflet-marker-shadow { max-width: none !important; max-height: none !important; }
+.bt-map .leaflet-pane,
+.bt-map .leaflet-tile,
+.bt-map .leaflet-marker-icon,
+.bt-map .leaflet-marker-shadow,
+.bt-map .leaflet-tile-container,
+.bt-map .leaflet-pane > svg,
+.bt-map .leaflet-pane > canvas { position: absolute; left: 0; top: 0; }
+.bt-map .leaflet-tile { visibility: inherit !important; width: 256px; height: 256px; }
+.bt-map .leaflet-control-attribution { font-size: 10px; }
+.bt-map .leaflet-control-zoom a { color: #0F172A; }
+
+/* Icon-only recenter control shared by Driver and Admin live maps. */
+.bt-map-recenter-control { width:46px; height:46px; padding:0; display:grid; place-items:center; border:1px solid #e2e8f0; border-radius:50%; background:#fff; color:#F59E0B; box-shadow:0 3px 12px #0f172a24; cursor:pointer; }
+.bt-map-recenter-control svg { width:23px; height:23px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.bt-map-recenter-control:focus-visible { outline:3px solid #F59E0B; outline-offset:2px; }
+
+/* Keep admin map controls responsive to pointer and keyboard interaction. */
+.bt-map-recenter-control {
+  transition: background-color .16s ease, color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.bt-map-recenter-control:hover {
+  background: #fff7e6;
+  color: #D97706;
+  box-shadow: 0 5px 16px #0f172a2b;
+  transform: translateY(-1px);
+}
+.bt-map-recenter-control:active { transform: scale(.96); }
+
+.bt-map-speed-control { position:absolute; z-index:500; right:12px; bottom:96px; width:46px; height:46px; border:1px solid #e2e8f0; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fff; color:#0F172A; box-shadow:0 3px 12px #0f172a24; font-size:15px; font-weight:800; line-height:1; }
+.bt-map-speed-control small { margin-top:3px; color:#64748b; font-size:8px; font-weight:700; }

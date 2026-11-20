@@ -1,0 +1,2 @@
+export const headingWedgeStyle = (heading) => heading == null || !Number.isFinite(Number(heading)) ? null : { transform: `rotate(${Number(heading)}deg)` };
+export function haversineMeters(a,b) { const R=6371000, rad=(v)=>Number(v)*Math.PI/180; const dLat=rad(b.lat)-rad(a.lat), dLng=rad(b.lng)-rad(a.lng); const x=Math.sin(dLat/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLng/2)**2; return 2*R*Math.asin(Math.sqrt(Math.min(1,x))); }

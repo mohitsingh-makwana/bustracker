@@ -1,0 +1,10 @@
+
+.git
+../.idea/
+.vscode/
+backend/.env
+.env.*
+node_modules/
+frontend-prev/node_modules/
+frontend-prev/dist/
+target/
