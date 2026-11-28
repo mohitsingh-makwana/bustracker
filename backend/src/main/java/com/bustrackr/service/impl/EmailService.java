@@ -1,28 +1,38 @@
 package com.bustrackr.service.impl;
 
+import com.google.api.services.gmail.Gmail;
+import com.google.api.services.gmail.model.Message;
 import jakarta.mail.MessagingException;
+import jakarta.mail.Session;
+import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Base64;
+import java.util.Properties;
 
 @Service
 @Slf4j
 public class EmailService {
 
-
-    private final JavaMailSender mailSender;
-
-    @Value("${spring.mail.username}")
-    private String fromAddress;
+    private final Gmail gmail;
 
 
-    public EmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
+    private final String fromAddress;
+
+    public EmailService(@Value("${gmail.sender}")String fromAddress, Gmail gmail) {
+        this.fromAddress=fromAddress;
+        this.gmail = gmail;
     }
+
+
     @Async
     public void sendRegistrationOtpEmail(String toEmail, String otp, int validityMinutes) {
         String subject = "BusTrackr - Your verification code";
@@ -116,18 +126,30 @@ public class EmailService {
         send(toEmail, subject, body);
     }
 
+
     private void send(String to, String subject, String text) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
-            helper.setFrom(fromAddress);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(text, false);
-            mailSender.send(message);
-        } catch (MessagingException | RuntimeException e) {
+            Session session = Session.getInstance(new Properties());
+            MimeMessage mime = new MimeMessage(session);
+            mime.setFrom(new InternetAddress(fromAddress, "BusTrackr"));
+            mime.setRecipients(jakarta.mail.Message.RecipientType.TO, InternetAddress.parse(to));
+            mime.setSubject(subject, "UTF-8");
+            mime.setText(text, "UTF-8");
+
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            mime.writeTo(buffer);
+            String raw = Base64.getUrlEncoder().encodeToString(buffer.toByteArray());
+
+            Message message = new Message();
+            message.setRaw(raw);
+
+            gmail.users().messages().send("me", message).execute();
+            log.info("Email sent to {}", to);
+        } catch (MessagingException | IOException | RuntimeException e) {
             // Don't break the main flow (accept/reject/create) if the mail fails
             log.error("Failed to send email to {}: {}", to, e.getMessage());
         }
     }
+
+
 }

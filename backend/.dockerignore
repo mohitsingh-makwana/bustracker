@@ -2,6 +2,7 @@
 .git
 ../.idea/
 .vscode/
+backend/credentials.json
 backend/.env
 .env.*
 node_modules/

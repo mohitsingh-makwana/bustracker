@@ -22,12 +22,9 @@ import java.io.IOException;
 @RequiredArgsConstructor
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private final UserRepository userRepository;
-    private final TransportMemberRepository transportMemberRepository;
 
     private final UserDetailsService userDetailsService;
     private final MemberAuthenticationService memberAuthenticationService;
-
 
     private final AuthUtil authUtil;
 

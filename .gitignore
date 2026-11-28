@@ -1,5 +1,8 @@
 HELP.md
 target/
+tokens/
+client_secret*.json
+backend/credentials.json
 backend/.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
